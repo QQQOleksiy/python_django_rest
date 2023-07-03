@@ -1,40 +1,34 @@
-from django.db.models import QuerySet
-from django.http import QueryDict
-from rest_framework.serializers import ValidationError
+from django_filters import rest_framework as filters
 
-from .models import CarModel
+from apps.cars.choices.body_type_choices import BodyTypeChoices
+from apps.cars.models import CarModel
 
 
-def car_filter_queryset(query: QueryDict) -> QuerySet:
-    qs = CarModel.objects.all()
+class CarFilter(filters.FilterSet):
 
-    for k, v in query.items():
-        match k:
-            case 'price_gte':
-                qs = qs.filter(price__gte=v)
-            case 'price_gt':
-                qs = qs.filter(price__gt=v)
-            case 'price_lte':
-                qs = qs.filter(price__lte=v)
-            case 'price_lt':
-                qs = qs.filter(price__lt=v)
+    class Meta:
+        model = CarModel
+        fields = ('id', 'brand', 'body', 'price', 'year')
 
-            case 'year_gte':
-                qs = qs.filter(year__gte=v)
-            case 'year_gt':
-                qs = qs.filter(year__gt=v)
-            case 'year_lte':
-                qs = qs.filter(year__lte=v)
-            case 'year_lt':
-                qs = qs.filter(year__lt=v)
+    year_lt = filters.NumberFilter('year', 'lt')
+    year_gt = filters.NumberFilter('year', 'gt')
+    year_lte = filters.NumberFilter('year', 'lte')
+    year_gte = filters.NumberFilter('year', 'gte')
+    year_range = filters.RangeFilter('year')
 
-            case 'brand_start':
-                qs = qs.filter(brand__istartswith=v)
-            case 'brand_end':
-                qs = qs.filter(brand__iendswith=v)
-            case 'brand_in':
-                qs = qs.filter(brand__icontains=v)
-            case _:
-                raise ValidationError({'detail': f'"{k}" not allowed here'})
+    price_lt = filters.NumberFilter('price', 'lt')
+    price_gt = filters.NumberFilter('price', 'gt')
+    price_lte = filters.NumberFilter('price', 'lte')
+    price_gte = filters.NumberFilter('price', 'gte')
+    price_range = filters.RangeFilter('price')
 
-    return qs
+    brand_contains = filters.CharFilter('brand', 'icontains')
+    brand_startswith = filters.CharFilter('brand', 'istartswith')
+    brand_endswith = filters.CharFilter('brand', 'iendswith')
+
+    body = filters.ChoiceFilter('body', choices=BodyTypeChoices.choices)
+
+    order = filters.OrderingFilter(
+        fields=('id', 'brand', 'body', 'price', 'year')
+    )
+

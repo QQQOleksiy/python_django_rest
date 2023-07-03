@@ -1,24 +1,29 @@
 from django.http import Http404
+
 from rest_framework import status
-from rest_framework.generics import GenericAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.mixins import ListModelMixin, CreateModelMixin
+from rest_framework.generics import GenericAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
+
+from core.permission.is_superuser import IsSuperUser
 
 from apps.cars.models import CarModel
 from apps.cars.serializers import CarSerializer
+
 from .models import AutoParkModel
 from .serializers import AutoParkSerializer
 
 
-class AutoParkListCreateView(GenericAPIView, ListModelMixin, CreateModelMixin):
+class AutoParkListCreateView(ListCreateAPIView):
     serializer_class = AutoParkSerializer
-    queryset = AutoParkModel.objects.all()
+    queryset = AutoParkModel.objects.prefetch_related('cars')
+    pagination_class = None
 
-    def get(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return (IsAdminUser(),)
 
-    def post(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        return (IsSuperUser(),)
 
 
 class AutoParkRetrieveUpdateDestroyView(RetrieveUpdateDestroyAPIView):
